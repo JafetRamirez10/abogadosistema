@@ -78,6 +78,15 @@ class AppServiceProvider extends ServiceProvider
 
             if ($tenant !== null) {
                 setPermissionsTeamId($tenant->getKey());
+
+                // Spatie cachea roles/permissions en la instancia del modelo. Si se
+                // cargaron antes de fijar el equipo, quedan vacías y los policies
+                // devuelven 403 aunque el usuario tenga el permiso.
+                $user = auth()->user();
+
+                if ($user !== null) {
+                    $user->unsetRelation('roles')->unsetRelation('permissions');
+                }
             }
         });
     }

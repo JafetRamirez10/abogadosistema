@@ -2,7 +2,9 @@
     <x-filament::section>
         <x-slot name="heading">Actividad reciente</x-slot>
 
-        @php($actividades = $this->getActividades())
+        @php
+            $actividades = $this->getActividades();
+        @endphp
 
         @if ($actividades->isEmpty())
             <div class="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center">

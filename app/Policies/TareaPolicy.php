@@ -1,54 +1,108 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Policies;
 
-use App\Models\Tarea;
 use App\Models\User;
+use App\Models\Tarea;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TareaPolicy
 {
+    use HandlesAuthorization;
+
+    /**
+     * Determine whether the user can view any models.
+     */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'abogado', 'asistente']);
+        return $user->can('view_any_tarea');
     }
 
+    /**
+     * Determine whether the user can view the model.
+     */
     public function view(User $user, Tarea $tarea): bool
     {
-        return $this->sameDespacho($user, $tarea);
+        return $user->can('view_tarea');
     }
 
+    /**
+     * Determine whether the user can create models.
+     */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'abogado', 'asistente']);
+        return $user->can('create_tarea');
     }
 
+    /**
+     * Determine whether the user can update the model.
+     */
     public function update(User $user, Tarea $tarea): bool
     {
-        return $this->sameDespacho($user, $tarea)
-            && $user->hasAnyRole(['admin', 'abogado', 'asistente']);
+        return $user->can('update_tarea');
     }
 
+    /**
+     * Determine whether the user can delete the model.
+     */
     public function delete(User $user, Tarea $tarea): bool
     {
-        return $this->sameDespacho($user, $tarea)
-            && $user->hasAnyRole(['admin', 'abogado']);
+        return $user->can('delete_tarea');
     }
 
-    public function restore(User $user, Tarea $tarea): bool
+    /**
+     * Determine whether the user can bulk delete.
+     */
+    public function deleteAny(User $user): bool
     {
-        return $this->delete($user, $tarea);
+        return $user->can('delete_any_tarea');
     }
 
+    /**
+     * Determine whether the user can permanently delete.
+     */
     public function forceDelete(User $user, Tarea $tarea): bool
     {
-        return $user->hasRole('admin') && $this->sameDespacho($user, $tarea);
+        return $user->can('force_delete_tarea');
     }
 
-    private function sameDespacho(User $user, Tarea $tarea): bool
+    /**
+     * Determine whether the user can permanently bulk delete.
+     */
+    public function forceDeleteAny(User $user): bool
     {
-        return $user->despachos()->whereKey($tarea->despacho_id)->exists()
-            && $user->hasAnyRole(['admin', 'abogado', 'asistente']);
+        return $user->can('force_delete_any_tarea');
+    }
+
+    /**
+     * Determine whether the user can restore.
+     */
+    public function restore(User $user, Tarea $tarea): bool
+    {
+        return $user->can('restore_tarea');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_tarea');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
+    public function replicate(User $user, Tarea $tarea): bool
+    {
+        return $user->can('replicate_tarea');
+    }
+
+    /**
+     * Determine whether the user can reorder.
+     */
+    public function reorder(User $user): bool
+    {
+        return $user->can('reorder_tarea');
     }
 }
