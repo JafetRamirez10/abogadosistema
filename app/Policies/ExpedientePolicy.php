@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Expediente;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ExpedientePolicy
@@ -23,7 +23,8 @@ class ExpedientePolicy
      */
     public function view(User $user, Expediente $expediente): bool
     {
-        return $user->can('view_expediente');
+        return $user->can('view_expediente')
+            && $user->despachos()->whereKey($expediente->despacho_id)->exists();
     }
 
     /**
@@ -39,7 +40,20 @@ class ExpedientePolicy
      */
     public function update(User $user, Expediente $expediente): bool
     {
-        return $user->can('update_expediente');
+        if (! $user->can('update_expediente')
+            || ! $user->despachos()->whereKey($expediente->despacho_id)->exists()) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('abogado')) {
+            return (int) $expediente->responsable_id === (int) $user->getKey();
+        }
+
+        return false;
     }
 
     /**

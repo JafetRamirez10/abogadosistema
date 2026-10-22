@@ -18,6 +18,11 @@ use Spatie\Permission\Models\Role as SpatieRole;
 class Role extends SpatieRole
 {
     /** @var list<string> */
+    protected $guarded = [
+        'id',
+    ];
+
+    /** @var list<string> */
     protected $fillable = [
         'name',
         'guard_name',

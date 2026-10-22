@@ -22,24 +22,45 @@ class RolesAndPermissionsSeeder extends Seeder
         'registrar_pagos',
     ];
 
-    /** @var array<string, list<string>> */
-    public const ROLE_PERMISSIONS = [
-        'admin' => self::CUSTOM_PERMISSIONS,
-        'abogado' => [
-            'ver_montos',
-            'usar_ia',
-            'gestionar_plantillas',
-            'registrar_horas',
-            'registrar_pagos',
-        ],
-        'asistente' => [],
+    /** @var list<string> */
+    public const SHIELD_RESOURCES = [
+        'tarea',
+        'cliente',
+        'expediente',
+        'documento',
+        'documento::version',
+        'plantilla',
+        'evento',
+        'actuacion',
+        'hora',
+        'pago',
+        'parte',
+        'user',
+        'role',
+        'despacho',
+    ];
+
+    /** @var list<string> */
+    public const SHIELD_ACTIONS = [
+        'view_any',
+        'view',
+        'create',
+        'update',
+        'delete',
+        'delete_any',
+        'force_delete',
+        'force_delete_any',
+        'restore',
+        'restore_any',
+        'replicate',
+        'reorder',
     ];
 
     public function run(): void
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        foreach (self::CUSTOM_PERMISSIONS as $permission) {
+        foreach (self::allPermissionNames() as $permission) {
             Permission::findOrCreate($permission, 'web');
         }
 
@@ -54,11 +75,58 @@ class RolesAndPermissionsSeeder extends Seeder
 
         setPermissionsTeamId($despacho->getKey());
 
-        foreach (self::CUSTOM_PERMISSIONS as $permission) {
+        foreach (self::allPermissionNames() as $permission) {
             Permission::findOrCreate($permission, 'web');
         }
 
-        foreach (self::ROLE_PERMISSIONS as $roleName => $permissions) {
+        $all = self::allPermissionNames();
+
+        $abogado = array_values(array_unique([
+            ...self::CUSTOM_PERMISSIONS,
+            ...self::resourcePermissions([
+                'tarea',
+                'cliente',
+                'expediente',
+                'documento',
+                'documento::version',
+                'plantilla',
+                'evento',
+                'actuacion',
+                'hora',
+                'pago',
+                'parte',
+            ]),
+            'usar_ia',
+            'ver_montos',
+            'gestionar_plantillas',
+            'registrar_horas',
+            'registrar_pagos',
+        ]));
+
+        $asistente = array_values(array_unique([
+            ...self::resourcePermissions([
+                'cliente',
+                'expediente',
+                'documento',
+                'documento::version',
+                'plantilla',
+            ], ['view_any', 'view']),
+            ...self::resourcePermissions([
+                'tarea',
+                'evento',
+                'actuacion',
+                'parte',
+            ], ['view_any', 'view', 'create', 'update']),
+        ]));
+
+        /** @var array<string, list<string>> $rolePermissions */
+        $rolePermissions = [
+            'admin' => $all,
+            'abogado' => $abogado,
+            'asistente' => $asistente,
+        ];
+
+        foreach ($rolePermissions as $roleName => $permissions) {
             /** @var Role $role */
             $role = Role::query()->firstOrCreate(
                 [
@@ -70,5 +138,35 @@ class RolesAndPermissionsSeeder extends Seeder
 
             $role->syncPermissions($permissions);
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function allPermissionNames(): array
+    {
+        return array_values(array_unique([
+            ...self::CUSTOM_PERMISSIONS,
+            ...self::resourcePermissions(self::SHIELD_RESOURCES),
+        ]));
+    }
+
+    /**
+     * @param  list<string>  $resources
+     * @param  list<string>|null  $actions
+     * @return list<string>
+     */
+    public static function resourcePermissions(array $resources, ?array $actions = null): array
+    {
+        $actions ??= self::SHIELD_ACTIONS;
+        $names = [];
+
+        foreach ($resources as $resource) {
+            foreach ($actions as $action) {
+                $names[] = "{$action}_{$resource}";
+            }
+        }
+
+        return $names;
     }
 }

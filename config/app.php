@@ -110,6 +110,18 @@ return [
 
     'hmac_key' => env('HMAC_KEY', env('APP_KEY')),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Asset Version (cache busting)
+    |--------------------------------------------------------------------------
+    |
+    | Se agrega como ?v= a CSS/JS/Livewire/Filament. Incrementá el valor
+    | (ASSET_VERSION=2, 3, …) después de desplegar cambios de frontend.
+    |
+    */
+
+    'asset_version' => env('ASSET_VERSION', '1'),
+
     'previous_keys' => [
         ...array_filter(
             explode(',', env('APP_PREVIOUS_KEYS', ''))

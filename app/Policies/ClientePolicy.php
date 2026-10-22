@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Cliente;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ClientePolicy
@@ -23,7 +23,8 @@ class ClientePolicy
      */
     public function view(User $user, Cliente $cliente): bool
     {
-        return $user->can('view_cliente');
+        return $user->can('view_cliente')
+            && $user->despachos()->whereKey($cliente->despacho_id)->exists();
     }
 
     /**

@@ -43,6 +43,7 @@ class Tarea extends DespachoScopedModel
         'vence_el',
         'prioridad',
         'estado',
+        'orden',
         'completada_at',
     ];
 
@@ -55,6 +56,7 @@ class Tarea extends DespachoScopedModel
             'vence_el' => 'date',
             'prioridad' => PrioridadTarea::class,
             'estado' => EstadoTarea::class,
+            'orden' => 'integer',
             'completada_at' => 'datetime',
         ];
     }
@@ -75,7 +77,19 @@ class Tarea extends DespachoScopedModel
     {
         return $query
             ->where('asignada_a', $user->getKey())
-            ->where('estado', EstadoTarea::Pendiente);
+            ->whereIn('estado', [
+                EstadoTarea::Pendiente,
+                EstadoTarea::EnProgreso,
+            ]);
+    }
+
+    /**
+     * @param  Builder<Tarea>  $query
+     * @return Builder<Tarea>
+     */
+    public function scopeAbiertas(Builder $query): Builder
+    {
+        return $query->where('estado', '!=', EstadoTarea::Completada);
     }
 
     /**
@@ -87,9 +101,18 @@ class Tarea extends DespachoScopedModel
         $hoy = now('America/Costa_Rica')->toDateString();
 
         return $query
-            ->where('estado', EstadoTarea::Pendiente)
+            ->abiertas()
             ->whereNotNull('vence_el')
             ->whereDate('vence_el', '<', $hoy);
+    }
+
+    public function estaVencida(): bool
+    {
+        if (! $this->estado->estaAbierta() || $this->vence_el === null) {
+            return false;
+        }
+
+        return $this->vence_el->toDateString() < now('America/Costa_Rica')->toDateString();
     }
 
     /** @return BelongsTo<Expediente, $this> */

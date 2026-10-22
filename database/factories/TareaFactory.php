@@ -37,8 +37,17 @@ class TareaFactory extends Factory
             'vence_el' => fake()->optional()->dateTimeBetween('now', '+2 weeks')?->format('Y-m-d'),
             'prioridad' => fake()->randomElement(PrioridadTarea::cases()),
             'estado' => EstadoTarea::Pendiente,
+            'orden' => 0,
             'completada_at' => null,
         ];
+    }
+
+    public function enProgreso(): static
+    {
+        return $this->state(fn (): array => [
+            'estado' => EstadoTarea::EnProgreso,
+            'completada_at' => null,
+        ]);
     }
 
     public function completada(): static

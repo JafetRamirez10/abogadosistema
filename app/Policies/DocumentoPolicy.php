@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Documento;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class DocumentoPolicy
@@ -23,7 +23,12 @@ class DocumentoPolicy
      */
     public function view(User $user, Documento $documento): bool
     {
-        return $user->can('view_documento');
+        return $user->can('view_documento') && $this->sameDespacho($user, $documento->despacho_id);
+    }
+
+    public function download(User $user, Documento $documento): bool
+    {
+        return $this->view($user, $documento);
     }
 
     /**
@@ -104,5 +109,14 @@ class DocumentoPolicy
     public function reorder(User $user): bool
     {
         return $user->can('reorder_documento');
+    }
+
+    private function sameDespacho(User $user, int|string|null $despachoId): bool
+    {
+        if ($despachoId === null) {
+            return false;
+        }
+
+        return $user->despachos()->whereKey($despachoId)->exists();
     }
 }

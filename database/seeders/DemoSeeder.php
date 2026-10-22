@@ -599,13 +599,13 @@ class DemoSeeder extends Seeder
                 'descripcion' => 'Preparar interrogatorio de testigos',
                 'prioridad' => PrioridadTarea::Media,
                 'vence_el' => $hoy->copy()->addDays(5)->toDateString(),
-                'estado' => EstadoTarea::Pendiente,
+                'estado' => EstadoTarea::EnProgreso,
             ],
             [
                 'descripcion' => 'Actualizar bitácora del expediente',
                 'prioridad' => PrioridadTarea::Media,
                 'vence_el' => $hoy->copy()->addDays(7)->toDateString(),
-                'estado' => EstadoTarea::Pendiente,
+                'estado' => EstadoTarea::EnProgreso,
             ],
             [
                 'descripcion' => 'Archivar constancia de notificación',
@@ -622,11 +622,12 @@ class DemoSeeder extends Seeder
             ],
         ];
 
-        foreach ($tareas as $tarea) {
+        foreach ($tareas as $index => $tarea) {
             Tarea::query()->create([
                 'despacho_id' => $despacho->getKey(),
                 'expediente_id' => $expediente->getKey(),
                 'asignada_a' => $abogada->getKey(),
+                'orden' => $index,
                 'creada_por' => $admin->getKey(),
                 'descripcion' => $tarea['descripcion'],
                 'vence_el' => $tarea['vence_el'],
@@ -760,7 +761,12 @@ class DemoSeeder extends Seeder
 
         DB::transaction(function () use ($despacho, $expedientes, $abogado, $admin, $nTareas): void {
             for ($i = 0; $i < $nTareas; $i++) {
-                $completada = fake()->boolean(25);
+                $estado = fake()->randomElement([
+                    EstadoTarea::Pendiente,
+                    EstadoTarea::Pendiente,
+                    EstadoTarea::EnProgreso,
+                    EstadoTarea::Completada,
+                ]);
 
                 Tarea::factory()->create([
                     'despacho_id' => $despacho->getKey(),
@@ -768,8 +774,11 @@ class DemoSeeder extends Seeder
                     'asignada_a' => $abogado->getKey(),
                     'creada_por' => $admin->getKey(),
                     'prioridad' => fake()->randomElement(PrioridadTarea::cases()),
-                    'estado' => $completada ? EstadoTarea::Completada : EstadoTarea::Pendiente,
-                    'completada_at' => $completada ? now('America/Costa_Rica') : null,
+                    'estado' => $estado,
+                    'orden' => $i,
+                    'completada_at' => $estado === EstadoTarea::Completada
+                        ? now('America/Costa_Rica')
+                        : null,
                 ]);
             }
         });

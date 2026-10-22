@@ -19,7 +19,7 @@ class TareaResource extends Resource
 {
     protected static ?string $model = Tarea::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static ?string $navigationIcon = 'heroicon-o-view-columns';
 
     protected static ?string $navigationLabel = 'Tareas';
 
@@ -68,7 +68,7 @@ class TareaResource extends Resource
                                     ->default(PrioridadTarea::Media)
                                     ->required(),
                                 Forms\Components\Select::make('estado')
-                                    ->label('Estado')
+                                    ->label('Columna')
                                     ->options(EstadoTarea::class)
                                     ->default(EstadoTarea::Pendiente)
                                     ->required()
@@ -81,7 +81,7 @@ class TareaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('vence_el')
+            ->defaultSort('orden')
             ->columns([
                 Tables\Columns\TextColumn::make('descripcion')
                     ->label('Descripción')
@@ -109,8 +109,7 @@ class TareaResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('estado')
-                    ->options(EstadoTarea::class)
-                    ->default(EstadoTarea::Pendiente->value),
+                    ->options(EstadoTarea::class),
                 Tables\Filters\SelectFilter::make('prioridad')
                     ->options(PrioridadTarea::class),
             ])
@@ -131,7 +130,6 @@ class TareaResource extends Resource
     {
         return [
             'index' => Pages\ListTareas::route('/'),
-            'create' => Pages\CreateTarea::route('/create'),
             'edit' => Pages\EditTarea::route('/{record}/edit'),
         ];
     }

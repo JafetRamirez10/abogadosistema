@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Filament\Widgets;
 
 use App\Actions\CompletarTarea;
-use App\Enums\EstadoTarea;
 use App\Enums\PrioridadTarea;
 use App\Filament\Resources\TareaResource;
 use App\Models\Tarea;
@@ -96,11 +95,7 @@ class MisTareasWidget extends Widget
 
     public function esVencida(Tarea $tarea): bool
     {
-        if ($tarea->estado !== EstadoTarea::Pendiente || $tarea->vence_el === null) {
-            return false;
-        }
-
-        return $tarea->vence_el->toDateString() < now('America/Costa_Rica')->toDateString();
+        return $tarea->estaVencida();
     }
 
     public function colorPrioridad(PrioridadTarea $prioridad): string

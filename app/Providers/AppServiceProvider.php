@@ -11,11 +11,13 @@ use Database\Factories\Support\CostaRicaProvider;
 use Faker\Factory as FakerFactory;
 use Faker\Generator as FakerGenerator;
 use Filament\Facades\Filament;
+use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerCostaRicaFaker();
+        $this->registerAssetVersioning();
 
         Password::defaults(static fn (): Password => Password::min(10)
             ->mixedCase()
@@ -89,6 +92,24 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
         });
+    }
+
+    /**
+     * Cache-busting: Filament ?v=ASSET_VERSION y Vite con query de versión.
+     */
+    private function registerAssetVersioning(): void
+    {
+        $version = asset_version();
+
+        FilamentAsset::appVersion($version);
+
+        Vite::useScriptTagAttributes([
+            'data-asset-version' => $version,
+        ]);
+
+        Vite::useStyleTagAttributes([
+            'data-asset-version' => $version,
+        ]);
     }
 
     /**
