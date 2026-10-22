@@ -6,6 +6,21 @@
             ?? \App\Enums\EstadoTarea::Pendiente;
     @endphp
 
+    {{-- Loading al abrir el modal de una tarea --}}
+    <div
+        wire:loading.flex
+        wire:target="abrirTarea"
+        class="fixed inset-0 z-[200] hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px]"
+        role="status"
+        aria-live="polite"
+        aria-label="Cargando tarea"
+    >
+        <div class="flex min-w-[12rem] flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-white px-8 py-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+            <x-filament::loading-indicator class="h-8 w-8 text-primary-600" />
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Abriendo tarea…</p>
+        </div>
+    </div>
+
     <div class="kanban-toolbar space-y-3">
         <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -126,22 +141,42 @@
                             <div
                                 class="flex cursor-pointer items-start justify-between gap-2"
                                 wire:click="abrirTarea({{ $tarea->id }})"
+                                wire:loading.class="opacity-60"
+                                wire:target="abrirTarea({{ $tarea->id }})"
                                 role="button"
                                 tabindex="0"
                                 aria-label="Abrir tarea"
                             >
-                                <p class="min-w-0 flex-1 whitespace-pre-line text-sm font-medium leading-snug text-gray-900 dark:text-gray-100">
-                                    {{ $this->resumenDescripcion($tarea->descripcion) }}
-                                </p>
+                                <div class="min-w-0 flex-1 space-y-1">
+                                    <p class="text-sm font-semibold leading-snug text-gray-900 dark:text-gray-100">
+                                        {{ $this->resumenTitulo($tarea->titulo) }}
+                                    </p>
+                                    @if ($resumen = $this->resumenDescripcion($tarea->descripcion))
+                                        <p class="text-xs leading-snug text-gray-500 dark:text-gray-400">
+                                            {{ $resumen }}
+                                        </p>
+                                    @endif
+                                </div>
                                 <div class="kanban-card-actions flex shrink-0 items-center gap-1" wire:click.stop>
                                     <button
                                         type="button"
                                         wire:click="abrirTarea({{ $tarea->id }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="abrirTarea"
                                         class="kanban-icon-btn"
                                         title="Abrir"
                                         aria-label="Abrir tarea"
                                     >
-                                        <x-heroicon-o-pencil-square class="h-5 w-5" />
+                                        <x-filament::loading-indicator
+                                            wire:loading
+                                            wire:target="abrirTarea({{ $tarea->id }})"
+                                            class="h-5 w-5"
+                                        />
+                                        <x-heroicon-o-pencil-square
+                                            wire:loading.remove
+                                            wire:target="abrirTarea({{ $tarea->id }})"
+                                            class="h-5 w-5"
+                                        />
                                     </button>
                                     <button
                                         type="button"

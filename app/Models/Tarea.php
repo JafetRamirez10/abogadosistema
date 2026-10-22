@@ -20,7 +20,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property int|null $expediente_id
  * @property int $asignada_a
  * @property int $creada_por
- * @property string $descripcion
+ * @property string $titulo
+ * @property string|null $descripcion
  * @property CarbonInterface|null $vence_el
  * @property PrioridadTarea $prioridad
  * @property EstadoTarea $estado
@@ -39,6 +40,7 @@ class Tarea extends DespachoScopedModel
         'expediente_id',
         'asignada_a',
         'creada_por',
+        'titulo',
         'descripcion',
         'vence_el',
         'prioridad',

@@ -39,8 +39,13 @@
                         />
                         <div class="min-w-0 flex-1">
                             <p class="{{ $titleClass }}">
-                                {{ $tarea->descripcion }}
+                                {{ $tarea->titulo }}
                             </p>
+                            @if (filled($tarea->descripcion))
+                                <p class="mt-0.5 line-clamp-2 text-xs text-gray-500">
+                                    {{ $tarea->descripcion }}
+                                </p>
+                            @endif
                             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                 <x-filament::badge :color="$color" size="sm">
                                     {{ $tarea->prioridad->getLabel() }}

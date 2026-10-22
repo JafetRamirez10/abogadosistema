@@ -23,7 +23,8 @@ it('completa una tarea propia desde el widget Livewire', function (): void {
         'creada_por' => $user->id,
         'estado' => EstadoTarea::Pendiente,
         'prioridad' => PrioridadTarea::Media,
-        'descripcion' => 'Preparar memorial',
+        'titulo' => 'Preparar memorial',
+        'descripcion' => 'Redactar y presentar el memorial.',
     ]);
 
     Livewire::test(MisTareasWidget::class)
@@ -46,7 +47,8 @@ it('no permite completar una tarea asignada a otro usuario', function (): void {
         'asignada_a' => $otro->id,
         'creada_por' => $user->id,
         'estado' => EstadoTarea::Pendiente,
-        'descripcion' => 'Ajena',
+        'titulo' => 'Ajena',
+        'descripcion' => 'Tarea de otro usuario.',
     ]);
 
     Livewire::test(MisTareasWidget::class)

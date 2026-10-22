@@ -38,14 +38,20 @@ class TareaResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Detalle')
                     ->schema([
+                        Forms\Components\TextInput::make('titulo')
+                            ->label('Título')
+                            ->placeholder('Ej. Revisar contestación de demanda')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
                         Forms\Components\Textarea::make('descripcion')
                             ->label('Descripción')
-                            ->placeholder('Escribí el detalle de la tarea…')
-                            ->required()
+                            ->placeholder('Detalle, notas, pasos a seguir…')
                             ->rows(10)
                             ->autosize()
                             ->maxLength(10000)
                             ->columnSpanFull()
+                            ->helperText('Espacio amplio para el detalle de la tarea.')
                             ->extraInputAttributes([
                                 'class' => 'min-h-[14rem] text-base leading-relaxed',
                             ]),
@@ -96,11 +102,17 @@ class TareaResource extends Resource
         return $table
             ->defaultSort('orden')
             ->columns([
+                Tables\Columns\TextColumn::make('titulo')
+                    ->label('Título')
+                    ->searchable()
+                    ->wrap()
+                    ->limit(60),
                 Tables\Columns\TextColumn::make('descripcion')
                     ->label('Descripción')
                     ->searchable()
                     ->wrap()
-                    ->limit(60),
+                    ->limit(40)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('asignada.name')
                     ->label('Asignada a')
                     ->sortable(),

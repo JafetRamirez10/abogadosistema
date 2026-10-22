@@ -87,6 +87,7 @@ class ListTareas extends Page
                 Gate::authorize('update', $tarea);
 
                 return [
+                    'titulo' => $tarea->titulo,
                     'descripcion' => $tarea->descripcion,
                     'asignada_a' => $tarea->asignada_a,
                     'expediente_id' => $tarea->expediente_id,
@@ -138,14 +139,23 @@ class ListTareas extends Page
         return [
             Forms\Components\Section::make('Detalle')
                 ->schema([
+                    Forms\Components\TextInput::make('titulo')
+                        ->label('Título')
+                        ->placeholder('Ej. Revisar contestación de demanda')
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpanFull()
+                        ->extraInputAttributes([
+                            'class' => 'text-base font-medium',
+                        ]),
                     Forms\Components\Textarea::make('descripcion')
                         ->label('Descripción')
-                        ->placeholder('Escribí el detalle de la tarea…')
-                        ->required()
+                        ->placeholder('Detalle, notas, pasos a seguir…')
                         ->rows(10)
                         ->autosize()
                         ->maxLength(10000)
                         ->columnSpanFull()
+                        ->helperText('Espacio amplio para el detalle de la tarea.')
                         ->extraInputAttributes([
                             'class' => 'min-h-[14rem] text-base leading-relaxed',
                         ]),
@@ -284,14 +294,33 @@ class ListTareas extends Page
         };
     }
 
-    public function resumenDescripcion(string $descripcion): string
+    public function resumenTitulo(string $titulo): string
     {
-        $linea = preg_replace('/\s+/', ' ', trim($descripcion)) ?? '';
+        $linea = preg_replace('/\s+/', ' ', trim($titulo)) ?? '';
 
-        if (mb_strlen($linea) <= 120) {
+        if ($linea === '') {
+            return 'Sin título';
+        }
+
+        if (mb_strlen($linea) <= 80) {
             return $linea;
         }
 
-        return mb_substr($linea, 0, 117).'…';
+        return mb_substr($linea, 0, 77).'…';
+    }
+
+    public function resumenDescripcion(?string $descripcion): ?string
+    {
+        if ($descripcion === null || trim($descripcion) === '') {
+            return null;
+        }
+
+        $linea = preg_replace('/\s+/', ' ', trim($descripcion)) ?? '';
+
+        if (mb_strlen($linea) <= 100) {
+            return $linea;
+        }
+
+        return mb_substr($linea, 0, 97).'…';
     }
 }
