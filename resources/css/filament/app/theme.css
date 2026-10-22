@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+:root {
+    --despacho-bg: #f8fafc;
+    --despacho-card-border: #e5e7eb;
+    --despacho-card-radius: 12px;
+}
+
+.fi-body,
+.fi-main,
+.fi-main-ctn {
+    background-color: var(--despacho-bg) !important;
+}
+
+.fi-wi-widget,
+.fi-section,
+.fi-ta-ctn,
+.fi-fo-tabs,
+.fi-panel {
+    border-radius: var(--despacho-card-radius);
+}
+
+.fi-wi-stats-overview-stat,
+.fi-section:not(.fi-collapsible),
+.fi-ta-ctn {
+    background-color: #ffffff;
+    border: 1px solid var(--despacho-card-border);
+    border-radius: var(--despacho-card-radius);
+}
+
+.fi-sidebar-footer-help {
+    border-top: 1px solid var(--despacho-card-border);
+}
