@@ -7,6 +7,7 @@ namespace App\Filament\Resources;
 use App\Enums\EstadoTarea;
 use App\Enums\PrioridadTarea;
 use App\Filament\Resources\TareaResource\Pages;
+use App\Models\Expediente;
 use App\Models\Tarea;
 use App\Models\User;
 use Filament\Forms;
@@ -64,7 +65,10 @@ class TareaResource extends Resource
                                     ->default(fn (): mixed => auth()->id()),
                                 Forms\Components\Select::make('expediente_id')
                                     ->label('Expediente')
-                                    ->relationship('expediente', 'numero_interno')
+                                    ->options(fn (): array => Expediente::query()
+                                        ->orderBy('numero_interno')
+                                        ->pluck('numero_interno', 'id')
+                                        ->all())
                                     ->searchable()
                                     ->preload()
                                     ->nullable(),

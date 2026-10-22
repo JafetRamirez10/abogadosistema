@@ -8,6 +8,7 @@ use App\Actions\MoverTareaEnTablero;
 use App\Enums\EstadoTarea;
 use App\Enums\PrioridadTarea;
 use App\Filament\Resources\TareaResource;
+use App\Models\Expediente;
 use App\Models\Tarea;
 use App\Models\User;
 use Filament\Actions;
@@ -76,9 +77,10 @@ class ListTareas extends Page
     {
         return Action::make('editTarea')
             ->label('Editar tarea')
-            ->modalHeading(fn (array $arguments): string => 'Editar tarea')
+            ->modalHeading('Editar tarea')
             ->modalWidth(MaxWidth::ThreeExtraLarge)
             ->modalSubmitActionLabel('Guardar')
+            ->model(Tarea::class)
             ->fillForm(function (array $arguments): array {
                 $tarea = Tarea::query()->findOrFail($arguments['tareaId']);
 
@@ -163,7 +165,10 @@ class ListTareas extends Page
                                 ->default(fn (): mixed => auth()->id()),
                             Forms\Components\Select::make('expediente_id')
                                 ->label('Expediente')
-                                ->relationship('expediente', 'numero_interno')
+                                ->options(fn (): array => Expediente::query()
+                                    ->orderBy('numero_interno')
+                                    ->pluck('numero_interno', 'id')
+                                    ->all())
                                 ->searchable()
                                 ->preload()
                                 ->nullable(),
