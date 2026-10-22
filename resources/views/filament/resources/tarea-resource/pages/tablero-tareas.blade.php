@@ -121,21 +121,28 @@
                         <li
                             wire:key="tarea-{{ $tarea->id }}"
                             data-id="{{ $tarea->id }}"
-                            class="kanban-card group cursor-grab rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:shadow-md active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 {{ $tarea->estaVencida() ? 'ring-2 ring-danger-300' : '' }}"
+                            class="kanban-card group cursor-grab rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:border-primary-300 hover:shadow-md active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 {{ $tarea->estaVencida() ? 'ring-2 ring-danger-300' : '' }}"
                         >
-                            <div class="flex items-start justify-between gap-2">
-                                <p class="min-w-0 flex-1 text-sm font-medium leading-snug text-gray-900 dark:text-gray-100">
-                                    {{ $tarea->descripcion }}
+                            <div
+                                class="flex cursor-pointer items-start justify-between gap-2"
+                                wire:click="abrirTarea({{ $tarea->id }})"
+                                role="button"
+                                tabindex="0"
+                                aria-label="Abrir tarea"
+                            >
+                                <p class="min-w-0 flex-1 whitespace-pre-line text-sm font-medium leading-snug text-gray-900 dark:text-gray-100">
+                                    {{ $this->resumenDescripcion($tarea->descripcion) }}
                                 </p>
-                                <div class="kanban-card-actions flex shrink-0 items-center gap-1">
-                                    <a
-                                        href="{{ \App\Filament\Resources\TareaResource::getUrl('edit', ['record' => $tarea]) }}"
+                                <div class="kanban-card-actions flex shrink-0 items-center gap-1" wire:click.stop>
+                                    <button
+                                        type="button"
+                                        wire:click="abrirTarea({{ $tarea->id }})"
                                         class="kanban-icon-btn"
-                                        title="Editar"
-                                        aria-label="Editar tarea"
+                                        title="Abrir"
+                                        aria-label="Abrir tarea"
                                     >
                                         <x-heroicon-o-pencil-square class="h-5 w-5" />
-                                    </a>
+                                    </button>
                                     <button
                                         type="button"
                                         wire:click="eliminarTarea({{ $tarea->id }})"
@@ -149,7 +156,10 @@
                                 </div>
                             </div>
 
-                            <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                            <div
+                                class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500"
+                                wire:click="abrirTarea({{ $tarea->id }})"
+                            >
                                 <x-filament::badge :color="$this->colorPrioridad($tarea->prioridad)" size="sm">
                                     {{ $tarea->prioridad->getLabel() }}
                                 </x-filament::badge>
@@ -181,7 +191,7 @@
                             </div>
 
                             {{-- Mover sin drag: útil en celular --}}
-                            <div class="kanban-move mt-3 border-t border-gray-100 pt-3 dark:border-gray-700 md:hidden">
+                            <div class="kanban-move mt-3 border-t border-gray-100 pt-3 dark:border-gray-700 md:hidden" wire:click.stop>
                                 <label class="sr-only" for="mover-{{ $tarea->id }}">Mover a columna</label>
                                 <select
                                     id="mover-{{ $tarea->id }}"

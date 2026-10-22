@@ -35,15 +35,24 @@ class TareaResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Tarea')
+                Forms\Components\Section::make('Detalle')
+                    ->schema([
+                        Forms\Components\Textarea::make('descripcion')
+                            ->label('Descripción')
+                            ->placeholder('Escribí el detalle de la tarea…')
+                            ->required()
+                            ->rows(10)
+                            ->autosize()
+                            ->maxLength(10000)
+                            ->columnSpanFull()
+                            ->extraInputAttributes([
+                                'class' => 'min-h-[14rem] text-base leading-relaxed',
+                            ]),
+                    ]),
+                Forms\Components\Section::make('Asignación')
                     ->schema([
                         Forms\Components\Grid::make(['default' => 1, 'md' => 2])
                             ->schema([
-                                Forms\Components\TextInput::make('descripcion')
-                                    ->label('Descripción')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->columnSpanFull(),
                                 Forms\Components\Select::make('asignada_a')
                                     ->label('Asignada a')
                                     ->options(fn (): array => User::query()
@@ -130,7 +139,6 @@ class TareaResource extends Resource
     {
         return [
             'index' => Pages\ListTareas::route('/'),
-            'edit' => Pages\EditTarea::route('/{record}/edit'),
         ];
     }
 }

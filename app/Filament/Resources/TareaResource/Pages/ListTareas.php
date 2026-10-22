@@ -11,6 +11,7 @@ use App\Filament\Resources\TareaResource;
 use App\Models\Tarea;
 use App\Models\User;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
@@ -37,7 +38,7 @@ class ListTareas extends Page
     public string $columnaActiva = 'pendiente';
 
     /**
-     * @return array<Actions\Action>
+     * @return array<Action>
      */
     protected function getHeaderActions(): array
     {
@@ -47,7 +48,7 @@ class ListTareas extends Page
                 ->model(Tarea::class)
                 ->authorize(fn (): bool => Gate::allows('create', Tarea::class))
                 ->modalHeading('Nueva tarea')
-                ->modalWidth(MaxWidth::Large)
+                ->modalWidth(MaxWidth::ThreeExtraLarge)
                 ->modal()
                 ->createAnother(false)
                 ->form($this->tareaFormSchema())
@@ -61,6 +62,8 @@ class ListTareas extends Page
                     if ($data['estado'] === EstadoTarea::Completada->value
                         || $data['estado'] === EstadoTarea::Completada) {
                         $data['completada_at'] = now('America/Costa_Rica');
+                    } else {
+                        $data['completada_at'] = null;
                     }
 
                     return $data;
@@ -69,46 +72,115 @@ class ListTareas extends Page
         ];
     }
 
+    public function editTareaAction(): Action
+    {
+        return Action::make('editTarea')
+            ->label('Editar tarea')
+            ->modalHeading(fn (array $arguments): string => 'Editar tarea')
+            ->modalWidth(MaxWidth::ThreeExtraLarge)
+            ->modalSubmitActionLabel('Guardar')
+            ->fillForm(function (array $arguments): array {
+                $tarea = Tarea::query()->findOrFail($arguments['tareaId']);
+
+                Gate::authorize('update', $tarea);
+
+                return [
+                    'descripcion' => $tarea->descripcion,
+                    'asignada_a' => $tarea->asignada_a,
+                    'expediente_id' => $tarea->expediente_id,
+                    'vence_el' => $tarea->vence_el,
+                    'prioridad' => $tarea->prioridad,
+                    'estado' => $tarea->estado,
+                ];
+            })
+            ->form($this->tareaFormSchema())
+            ->action(function (array $data, array $arguments): void {
+                $tarea = Tarea::query()->findOrFail($arguments['tareaId']);
+                Gate::authorize('update', $tarea);
+
+                $estado = $data['estado'] ?? $tarea->estado;
+                if ($estado instanceof EstadoTarea) {
+                    $estadoEnum = $estado;
+                } else {
+                    $estadoEnum = EstadoTarea::from((string) $estado);
+                }
+
+                $data['completada_at'] = $estadoEnum === EstadoTarea::Completada
+                    ? ($tarea->completada_at ?? now('America/Costa_Rica'))
+                    : null;
+
+                $tarea->update($data);
+
+                Notification::make()
+                    ->title('Tarea actualizada')
+                    ->success()
+                    ->send();
+            });
+    }
+
+    public function abrirTarea(int $tareaId): void
+    {
+        $tarea = Tarea::query()->findOrFail($tareaId);
+        Gate::authorize('view', $tarea);
+
+        $this->mountAction('editTarea', [
+            'tareaId' => $tareaId,
+        ]);
+    }
+
     /**
      * @return array<int, Forms\Components\Component>
      */
     protected function tareaFormSchema(): array
     {
         return [
-            Forms\Components\TextInput::make('descripcion')
-                ->label('Descripción')
-                ->required()
-                ->maxLength(255),
-            Forms\Components\Grid::make(['default' => 1, 'md' => 2])
+            Forms\Components\Section::make('Detalle')
                 ->schema([
-                    Forms\Components\Select::make('asignada_a')
-                        ->label('Asignada a')
-                        ->options(fn (): array => User::query()
-                            ->orderBy('name')
-                            ->pluck('name', 'id')
-                            ->all())
-                        ->searchable()
+                    Forms\Components\Textarea::make('descripcion')
+                        ->label('Descripción')
+                        ->placeholder('Escribí el detalle de la tarea…')
                         ->required()
-                        ->default(fn (): mixed => auth()->id()),
-                    Forms\Components\Select::make('expediente_id')
-                        ->label('Expediente')
-                        ->relationship('expediente', 'numero_interno')
-                        ->searchable()
-                        ->preload()
-                        ->nullable(),
-                    Forms\Components\DatePicker::make('vence_el')
-                        ->label('Vence el')
-                        ->native(false),
-                    Forms\Components\Select::make('prioridad')
-                        ->label('Prioridad')
-                        ->options(PrioridadTarea::class)
-                        ->default(PrioridadTarea::Media)
-                        ->required(),
-                    Forms\Components\Select::make('estado')
-                        ->label('Columna')
-                        ->options(EstadoTarea::class)
-                        ->default(EstadoTarea::Pendiente)
-                        ->required(),
+                        ->rows(10)
+                        ->autosize()
+                        ->maxLength(10000)
+                        ->columnSpanFull()
+                        ->extraInputAttributes([
+                            'class' => 'min-h-[14rem] text-base leading-relaxed',
+                        ]),
+                ]),
+            Forms\Components\Section::make('Asignación')
+                ->schema([
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 2])
+                        ->schema([
+                            Forms\Components\Select::make('asignada_a')
+                                ->label('Asignada a')
+                                ->options(fn (): array => User::query()
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->all())
+                                ->searchable()
+                                ->required()
+                                ->default(fn (): mixed => auth()->id()),
+                            Forms\Components\Select::make('expediente_id')
+                                ->label('Expediente')
+                                ->relationship('expediente', 'numero_interno')
+                                ->searchable()
+                                ->preload()
+                                ->nullable(),
+                            Forms\Components\DatePicker::make('vence_el')
+                                ->label('Vence el')
+                                ->native(false),
+                            Forms\Components\Select::make('prioridad')
+                                ->label('Prioridad')
+                                ->options(PrioridadTarea::class)
+                                ->default(PrioridadTarea::Media)
+                                ->required(),
+                            Forms\Components\Select::make('estado')
+                                ->label('Columna')
+                                ->options(EstadoTarea::class)
+                                ->default(EstadoTarea::Pendiente)
+                                ->required(),
+                        ]),
                 ]),
         ];
     }
@@ -205,5 +277,16 @@ class ListTareas extends Page
             PrioridadTarea::Media => 'warning',
             PrioridadTarea::Baja => 'success',
         };
+    }
+
+    public function resumenDescripcion(string $descripcion): string
+    {
+        $linea = preg_replace('/\s+/', ' ', trim($descripcion)) ?? '';
+
+        if (mb_strlen($linea) <= 120) {
+            return $linea;
+        }
+
+        return mb_substr($linea, 0, 117).'…';
     }
 }
