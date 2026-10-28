@@ -7,22 +7,15 @@ namespace App\Filament\Pages;
 use App\Actions\ConsultarIaAgente;
 use App\Models\Expediente;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Computed;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
 
-class AsistenteJuridico extends Page implements HasForms
+class AsistenteJuridico extends Page
 {
-    use InteractsWithForms;
-
     protected static ?string $navigationIcon = 'heroicon-o-sparkles';
 
     protected static ?string $navigationLabel = 'Asistente IA';
@@ -33,8 +26,17 @@ class AsistenteJuridico extends Page implements HasForms
 
     protected static string $view = 'filament.pages.asistente-juridico';
 
-    /** @var array{pregunta: string|null, especialidad: string, usar_expediente: bool, expediente_id: int|null} */
-    public ?array $data = [];
+    public string $mensaje = '';
+
+    public string $especialidad = 'general';
+
+    public bool $usarExpediente = false;
+
+    public ?int $expedienteId = null;
+
+    public bool $mostrandoOpciones = false;
+
+    public bool $escribiendo = false;
 
     /**
      * @var list<array{role: string, content: string, fuentes?: list<array<string, mixed>>, pendientes?: list<array<string, mixed>>, acciones?: list<string>}>
@@ -51,60 +53,32 @@ class AsistenteJuridico extends Page implements HasForms
         return Auth::user()?->can('usar_ia') ?? false;
     }
 
-    public function mount(): void
+    public function updatedUsarExpediente(bool $value): void
     {
-        $this->form->fill([
-            'pregunta' => '',
-            'especialidad' => 'general',
-            'usar_expediente' => false,
-            'expediente_id' => null,
-        ]);
+        if (! $value) {
+            $this->expedienteId = null;
+        }
     }
 
-    public function form(Form $form): Form
+    /**
+     * @return array<int|string, string>
+     */
+    #[Computed]
+    public function expedientesOptions(): array
     {
-        return $form
-            ->schema([
-                Select::make('especialidad')
-                    ->label('Especialidad')
-                    ->options([
-                        'general' => 'General',
-                        'familia' => 'Familia',
-                        'notarial' => 'Notarial / inmobiliario',
-                        'penal' => 'Penal',
-                    ])
-                    ->required()
-                    ->native(false),
-                Toggle::make('usar_expediente')
-                    ->label('Incluir contexto de un expediente')
-                    ->live(),
-                Select::make('expediente_id')
-                    ->label('Expediente')
-                    ->options(fn (): array => Expediente::query()
-                        ->orderByDesc('id')
-                        ->limit(100)
-                        ->get()
-                        ->mapWithKeys(fn (Expediente $e): array => [
-                            $e->getKey() => $e->numero_interno.' — '.$e->titulo,
-                        ])
-                        ->all())
-                    ->searchable()
-                    ->visible(fn (callable $get): bool => (bool) $get('usar_expediente')),
-                Textarea::make('pregunta')
-                    ->label('Tu consulta o instrucción')
-                    ->placeholder('Ej. Creá una tarea «Revisar escritura de traspaso» o preguntá derecho. Para borrar/actualizar pedirá confirmación.')
-                    ->rows(4)
-                    ->required()
-                    ->maxLength(4000)
-                    ->columnSpanFull(),
+        return Expediente::query()
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->mapWithKeys(fn (Expediente $e): array => [
+                $e->getKey() => $e->numero_interno.' — '.$e->titulo,
             ])
-            ->statePath('data');
+            ->all();
     }
 
     public function enviar(): void
     {
-        $state = $this->form->getState();
-        $pregunta = trim((string) ($state['pregunta'] ?? ''));
+        $pregunta = trim($this->mensaje);
         if ($pregunta === '') {
             return;
         }
@@ -117,21 +91,23 @@ class AsistenteJuridico extends Page implements HasForms
         }
 
         $expediente = null;
-        if (! empty($state['usar_expediente']) && ! empty($state['expediente_id'])) {
-            $expediente = Expediente::query()->find($state['expediente_id']);
+        if ($this->usarExpediente && $this->expedienteId) {
+            $expediente = Expediente::query()->find($this->expedienteId);
         }
 
         $this->mensajes[] = [
             'role' => 'user',
             'content' => $pregunta,
         ];
+        $this->mensaje = '';
+        $this->escribiendo = true;
 
         try {
             $resultado = app(ConsultarIaAgente::class)->handle(
                 user: $user,
                 pregunta: $pregunta,
                 expediente: $expediente,
-                especialidad: (string) ($state['especialidad'] ?? 'general'),
+                especialidad: $this->especialidad,
             );
 
             $this->pendientes = $resultado['pendientes'];
@@ -148,18 +124,24 @@ class AsistenteJuridico extends Page implements HasForms
                 'pendientes' => $resultado['pendientes'],
                 'acciones' => $resultado['acciones_ejecutadas'],
             ];
-
-            $this->form->fill([
-                ...$state,
-                'pregunta' => '',
-            ]);
         } catch (TooManyRequestsHttpException $e) {
             array_pop($this->mensajes);
+            $this->mensaje = $pregunta;
             Notification::make()->warning()->title('Límite de IA')->body($e->getMessage())->send();
         } catch (Throwable $e) {
             array_pop($this->mensajes);
+            $this->mensaje = $pregunta;
             Notification::make()->danger()->title('Error de IA')->body($e->getMessage())->send();
+        } finally {
+            $this->escribiendo = false;
+            $this->dispatch('chat-scrolled');
         }
+    }
+
+    public function usarSugerencia(string $texto): void
+    {
+        $this->mensaje = $texto;
+        $this->enviar();
     }
 
     public function confirmarPendiente(string $pendingId): void
@@ -198,6 +180,8 @@ class AsistenteJuridico extends Page implements HasForms
         } catch (Throwable $e) {
             Notification::make()->danger()->title('Error al confirmar')->body($e->getMessage())->send();
         }
+
+        $this->dispatch('chat-scrolled');
     }
 
     public function cancelarPendiente(string $pendingId): void
@@ -215,12 +199,15 @@ class AsistenteJuridico extends Page implements HasForms
         ];
 
         Notification::make()->gray()->title('Acción cancelada')->send();
+        $this->dispatch('chat-scrolled');
     }
 
     public function limpiarChat(): void
     {
         $this->mensajes = [];
         $this->pendientes = [];
+        $this->mensaje = '';
+        $this->escribiendo = false;
     }
 
     public function proveedorActivo(): string
