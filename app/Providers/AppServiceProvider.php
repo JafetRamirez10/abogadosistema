@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\AiService;
+use App\Services\Ai\DeepSeekService;
 use App\Services\Ai\FakeAiService;
 use App\Services\Ai\OpenAiService;
 use Database\Factories\Support\CostaRicaProvider;
@@ -26,13 +27,22 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(AiService::class, function ($app): AiService {
-            $key = config('services.openai.key');
-
-            if ($app->environment('testing') || blank($key)) {
+            if ($app->environment('testing')) {
                 return $app->make(FakeAiService::class);
             }
 
-            return $app->make(OpenAiService::class);
+            // Preferir DeepSeek (producto). Fallback OpenAI si solo hay esa clave.
+            $deepseek = config('services.deepseek.key');
+            if (filled($deepseek)) {
+                return $app->make(DeepSeekService::class);
+            }
+
+            $openai = config('services.openai.key');
+            if (filled($openai)) {
+                return $app->make(OpenAiService::class);
+            }
+
+            return $app->make(FakeAiService::class);
         });
     }
 
@@ -66,6 +76,12 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('documentos-descarga', function (Request $request): Limit {
             return Limit::perMinute(60)->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip()));
+        });
+
+        RateLimiter::for('corpus-api', function (Request $request): Limit {
+            $tokenHint = substr((string) ($request->bearerToken() ?? $request->header('X-Corpus-Token') ?? 'anon'), 0, 12);
+
+            return Limit::perMinute(120)->by('corpus:'.$tokenHint.'|'.$request->ip());
         });
 
         if ($this->app->environment('production')) {

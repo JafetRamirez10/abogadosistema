@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $prompt_hash
  * @property string $respuesta
  * @property int|null $tokens
+ * @property array<int, mixed>|null $fuentes
+ * @property string|null $especialidad
  */
 class AiConsulta extends DespachoScopedModel
 {
@@ -30,6 +32,8 @@ class AiConsulta extends DespachoScopedModel
         'prompt_hash',
         'respuesta',
         'tokens',
+        'fuentes',
+        'especialidad',
     ];
 
     /**
@@ -41,6 +45,7 @@ class AiConsulta extends DespachoScopedModel
             'tipo' => TipoConsultaIa::class,
             'respuesta' => 'encrypted',
             'tokens' => 'integer',
+            'fuentes' => 'array',
         ];
     }
 

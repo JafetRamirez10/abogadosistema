@@ -8,72 +8,48 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * MariaDB and MySQL reject identifiers longer than 64 characters.
-     * The default name cuotas_alimentarias_pension_alimentaria_id_periodo_concepto_index is 65.
-     */
-    private const CUOTAS_PERIODO_CONCEPTO_INDEX = 'cuotas_alimentarias_pension_periodo_concepto_idx';
-
     public function up(): void
     {
         Schema::table('expedientes', function (Blueprint $table): void {
-            if (! Schema::hasColumn('expedientes', 'tipo_caso_familia')) {
-                $table->string('tipo_caso_familia', 64)->nullable()->after('materia');
-            }
-
-            if (! Schema::hasColumn('expedientes', 'etapa_penal')) {
-                $table->string('etapa_penal', 64)->nullable()->after('tipo_caso_familia');
-            }
-
-            if (! Schema::hasColumn('expedientes', 'datos_sensibles')) {
-                $table->boolean('datos_sensibles')->default(false)->after('etapa_penal');
-            }
+            $table->string('tipo_caso_familia', 64)->nullable()->after('materia');
+            $table->string('etapa_penal', 64)->nullable()->after('tipo_caso_familia');
+            $table->boolean('datos_sensibles')->default(false)->after('etapa_penal');
         });
 
-        if (! Schema::hasTable('beneficiarios_familiares')) {
-            Schema::create('beneficiarios_familiares', function (Blueprint $table): void {
-                $table->id();
-                $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
-                $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
-                $table->string('nombre');
-                $table->date('fecha_nacimiento')->nullable();
-                $table->string('parentesco', 100)->nullable();
-                $table->boolean('es_menor')->default(true);
-                $table->text('cedula')->nullable();
-                $table->text('notas')->nullable();
-                $table->timestamps();
+        Schema::create('beneficiarios_familiares', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
+            $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
+            $table->string('nombre');
+            $table->date('fecha_nacimiento')->nullable();
+            $table->string('parentesco', 100)->nullable();
+            $table->boolean('es_menor')->default(true);
+            $table->text('cedula')->nullable();
+            $table->text('notas')->nullable();
+            $table->timestamps();
 
-                $table->index(['despacho_id', 'expediente_id']);
-            });
-        }
+            $table->index(['despacho_id', 'expediente_id']);
+        });
 
-        if (! Schema::hasTable('pensiones_alimentarias')) {
-            Schema::create('pensiones_alimentarias', function (Blueprint $table): void {
-                $table->id();
-                $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
-                $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
-                $table->decimal('cuota_mensual', 14, 2);
-                $table->string('moneda', 3)->default('CRC');
-                $table->unsignedTinyInteger('dia_vencimiento')->default(1);
-                $table->boolean('incluye_aguinaldo')->default(true);
-                $table->boolean('incluye_salario_escolar')->default(true);
-                $table->decimal('monto_aguinaldo', 14, 2)->nullable();
-                $table->decimal('monto_salario_escolar', 14, 2)->nullable();
-                $table->date('fecha_inicio');
-                $table->boolean('activa')->default(true);
-                $table->text('notas')->nullable();
-                $table->timestamps();
+        Schema::create('pensiones_alimentarias', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
+            $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
+            $table->decimal('cuota_mensual', 14, 2);
+            $table->string('moneda', 3)->default('CRC');
+            $table->unsignedTinyInteger('dia_vencimiento')->default(1);
+            $table->boolean('incluye_aguinaldo')->default(true);
+            $table->boolean('incluye_salario_escolar')->default(true);
+            $table->decimal('monto_aguinaldo', 14, 2)->nullable();
+            $table->decimal('monto_salario_escolar', 14, 2)->nullable();
+            $table->date('fecha_inicio');
+            $table->boolean('activa')->default(true);
+            $table->text('notas')->nullable();
+            $table->timestamps();
 
-                $table->unique(['expediente_id']);
-                $table->index(['despacho_id', 'activa']);
-            });
-        }
-
-        // The failed statement runs after CREATE TABLE, so production can hold an
-        // empty cuotas_alimentarias without this index. Recreate it complete.
-        if (Schema::hasTable('cuotas_alimentarias')) {
-            Schema::drop('cuotas_alimentarias');
-        }
+            $table->unique(['expediente_id']);
+            $table->index(['despacho_id', 'activa']);
+        });
 
         Schema::create('cuotas_alimentarias', function (Blueprint $table): void {
             $table->id();
@@ -91,45 +67,41 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['despacho_id', 'estado', 'vence_el']);
-            $table->index(['pension_alimentaria_id', 'periodo', 'concepto'], self::CUOTAS_PERIODO_CONCEPTO_INDEX);
+            $table->index(['pension_alimentaria_id', 'periodo', 'concepto']);
         });
 
-        if (! Schema::hasTable('pagos_alimentarios')) {
-            Schema::create('pagos_alimentarios', function (Blueprint $table): void {
-                $table->id();
-                $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
-                $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
-                $table->foreignId('pension_alimentaria_id')->constrained('pensiones_alimentarias')->cascadeOnDelete();
-                $table->foreignId('cuota_alimentaria_id')->nullable()->constrained('cuotas_alimentarias')->nullOnDelete();
-                $table->decimal('monto', 14, 2);
-                $table->string('moneda', 3)->default('CRC');
-                $table->date('fecha');
-                $table->string('metodo', 40)->default('sinpe');
-                $table->string('referencia', 255)->nullable();
-                $table->text('nota')->nullable();
-                $table->timestamps();
+        Schema::create('pagos_alimentarios', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
+            $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
+            $table->foreignId('pension_alimentaria_id')->constrained('pensiones_alimentarias')->cascadeOnDelete();
+            $table->foreignId('cuota_alimentaria_id')->nullable()->constrained('cuotas_alimentarias')->nullOnDelete();
+            $table->decimal('monto', 14, 2);
+            $table->string('moneda', 3)->default('CRC');
+            $table->date('fecha');
+            $table->string('metodo', 40)->default('sinpe');
+            $table->string('referencia', 255)->nullable();
+            $table->text('nota')->nullable();
+            $table->timestamps();
 
-                $table->index(['despacho_id', 'fecha']);
-            });
-        }
+            $table->index(['despacho_id', 'fecha']);
+        });
 
-        if (! Schema::hasTable('medidas_cautelares')) {
-            Schema::create('medidas_cautelares', function (Blueprint $table): void {
-                $table->id();
-                $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
-                $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
-                $table->string('tipo', 64);
-                $table->string('estado', 32)->default('vigente');
-                $table->date('fecha_inicio');
-                $table->date('fecha_revision')->nullable();
-                $table->date('fecha_vencimiento')->nullable();
-                $table->string('autoridad', 255)->nullable();
-                $table->text('descripcion')->nullable();
-                $table->timestamps();
+        Schema::create('medidas_cautelares', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('despacho_id')->constrained('despachos')->cascadeOnDelete();
+            $table->foreignId('expediente_id')->constrained('expedientes')->cascadeOnDelete();
+            $table->string('tipo', 64);
+            $table->string('estado', 32)->default('vigente');
+            $table->date('fecha_inicio');
+            $table->date('fecha_revision')->nullable();
+            $table->date('fecha_vencimiento')->nullable();
+            $table->string('autoridad', 255)->nullable();
+            $table->text('descripcion')->nullable();
+            $table->timestamps();
 
-                $table->index(['despacho_id', 'estado', 'fecha_vencimiento']);
-            });
-        }
+            $table->index(['despacho_id', 'estado', 'fecha_vencimiento']);
+        });
     }
 
     public function down(): void
@@ -140,15 +112,8 @@ return new class extends Migration
         Schema::dropIfExists('pensiones_alimentarias');
         Schema::dropIfExists('beneficiarios_familiares');
 
-        $columnas = array_values(array_filter(
-            ['tipo_caso_familia', 'etapa_penal', 'datos_sensibles'],
-            static fn (string $columna): bool => Schema::hasColumn('expedientes', $columna),
-        ));
-
-        if ($columnas !== []) {
-            Schema::table('expedientes', function (Blueprint $table) use ($columnas): void {
-                $table->dropColumn($columnas);
-            });
-        }
+        Schema::table('expedientes', function (Blueprint $table): void {
+            $table->dropColumn(['tipo_caso_familia', 'etapa_penal', 'datos_sensibles']);
+        });
     }
 };

@@ -10,12 +10,14 @@ enum TipoConsultaIa: string implements HasLabel
 {
     case Resumen = 'resumen';
     case Borrador = 'borrador';
+    case Chat = 'chat';
 
     public function label(): string
     {
         return match ($this) {
             self::Resumen => 'Resumen',
             self::Borrador => 'Borrador',
+            self::Chat => 'Chat jurídico',
         };
     }
 
