@@ -44,9 +44,9 @@ class SubirVersionDocumento
                 'archivo' => [
                     'required',
                     'file',
-                    'max:10240',
-                    'mimes:pdf,doc,docx,jpg,jpeg,png',
-                    'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png',
+                    'max:51200',
+                    'mimes:pdf,doc,docx,jpg,jpeg,png,mp3,mp4,wav,webm,m4a',
+                    'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,audio/mpeg,audio/mp4,audio/wav,audio/webm,audio/x-wav,audio/x-m4a,video/mp4,video/webm',
                 ],
                 'nombre' => ['required', 'string', 'max:255'],
                 'nota' => ['nullable', 'string', 'max:255'],

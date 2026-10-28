@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EstadoExpediente;
+use App\Enums\EtapaPenal;
 use App\Enums\Materia;
 use App\Enums\Moneda;
+use App\Enums\TipoCasoFamilia;
 use App\Enums\TipoHonorario;
 use App\Services\HonorariosService;
 use Database\Factories\ExpedienteFactory;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -27,6 +30,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property string|null $numero_judicial
  * @property string $titulo
  * @property Materia $materia
+ * @property TipoCasoFamilia|null $tipo_caso_familia
+ * @property EtapaPenal|null $etapa_penal
+ * @property bool $datos_sensibles
  * @property EstadoExpediente $estado
  * @property string|null $juzgado
  * @property Moneda $moneda
@@ -52,6 +58,9 @@ class Expediente extends DespachoScopedModel
         'numero_judicial',
         'titulo',
         'materia',
+        'tipo_caso_familia',
+        'etapa_penal',
+        'datos_sensibles',
         'estado',
         'juzgado',
         'fecha_inicio',
@@ -70,6 +79,9 @@ class Expediente extends DespachoScopedModel
     {
         return [
             'materia' => Materia::class,
+            'tipo_caso_familia' => TipoCasoFamilia::class,
+            'etapa_penal' => EtapaPenal::class,
+            'datos_sensibles' => 'boolean',
             'estado' => EstadoExpediente::class,
             'fecha_inicio' => 'date',
             'cuantia' => 'decimal:2',
@@ -146,6 +158,52 @@ class Expediente extends DespachoScopedModel
     public function aiConsultas(): HasMany
     {
         return $this->hasMany(AiConsulta::class);
+    }
+
+    /** @return HasMany<BeneficiarioFamiliar, $this> */
+    public function beneficiariosFamiliares(): HasMany
+    {
+        return $this->hasMany(BeneficiarioFamiliar::class);
+    }
+
+    /** @return HasOne<PensionAlimentaria, $this> */
+    public function pensionAlimentaria(): HasOne
+    {
+        return $this->hasOne(PensionAlimentaria::class);
+    }
+
+    /** @return HasMany<PensionAlimentaria, $this> */
+    public function pensionesAlimentarias(): HasMany
+    {
+        return $this->hasMany(PensionAlimentaria::class);
+    }
+
+    /** @return HasMany<CuotaAlimentaria, $this> */
+    public function cuotasAlimentarias(): HasMany
+    {
+        return $this->hasMany(CuotaAlimentaria::class);
+    }
+
+    /** @return HasMany<PagoAlimentario, $this> */
+    public function pagosAlimentarios(): HasMany
+    {
+        return $this->hasMany(PagoAlimentario::class);
+    }
+
+    /** @return HasMany<MedidaCautelar, $this> */
+    public function medidasCautelares(): HasMany
+    {
+        return $this->hasMany(MedidaCautelar::class);
+    }
+
+    public function esFamilia(): bool
+    {
+        return $this->materia === Materia::Familia;
+    }
+
+    public function esPenal(): bool
+    {
+        return $this->materia === Materia::Penal;
     }
 
     /** @return Attribute<string, never> */

@@ -91,8 +91,15 @@ class DocumentosRelationManager extends RelationManager
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                 'image/jpeg',
                                 'image/png',
+                                'audio/mpeg',
+                                'audio/mp4',
+                                'audio/wav',
+                                'audio/webm',
+                                'video/mp4',
+                                'video/webm',
                             ])
-                            ->maxSize(10240),
+                            ->maxSize(51200)
+                            ->helperText('PDF, Word, imágenes, audio o video (máx. 50 MB).'),
                         Forms\Components\TextInput::make('nota')
                             ->label('Nota')
                             ->maxLength(255),
@@ -149,8 +156,15 @@ class DocumentosRelationManager extends RelationManager
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                 'image/jpeg',
                                 'image/png',
+                                'audio/mpeg',
+                                'audio/mp4',
+                                'audio/wav',
+                                'audio/webm',
+                                'video/mp4',
+                                'video/webm',
                             ])
-                            ->maxSize(10240),
+                            ->maxSize(51200)
+                            ->helperText('PDF, Word, imágenes, audio o video (máx. 50 MB).'),
                         Forms\Components\TextInput::make('nota')
                             ->label('Nota')
                             ->maxLength(255),

@@ -31,7 +31,7 @@ it('rechaza archivos .php al subir versión de documento', function (): void {
     ))->toThrow(ValidationException::class);
 });
 
-it('rechaza archivos mayores a 10MB', function (): void {
+it('rechaza archivos mayores a 50MB', function (): void {
     Storage::fake('local');
 
     $despacho = Despacho::factory()->create();
@@ -41,7 +41,7 @@ it('rechaza archivos mayores a 10MB', function (): void {
         'responsable_id' => $user->getKey(),
     ]);
 
-    $archivo = UploadedFile::fake()->create('grande.pdf', 11_000, 'application/pdf');
+    $archivo = UploadedFile::fake()->create('grande.pdf', 52_000, 'application/pdf');
 
     expect(fn () => app(SubirVersionDocumento::class)->handle(
         expediente: $expediente,

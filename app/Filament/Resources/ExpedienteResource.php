@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Enums\EstadoExpediente;
+use App\Enums\EtapaPenal;
 use App\Enums\Materia;
 use App\Enums\Moneda;
+use App\Enums\TipoCasoFamilia;
 use App\Enums\TipoHonorario;
 use App\Filament\Resources\ExpedienteResource\Pages;
 use App\Filament\Resources\ExpedienteResource\RelationManagers;
@@ -14,6 +16,7 @@ use App\Models\Expediente;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -85,12 +88,37 @@ class ExpedienteResource extends Resource
                                         Forms\Components\Select::make('materia')
                                             ->label('Materia')
                                             ->options(Materia::class)
-                                            ->required(),
+                                            ->required()
+                                            ->live(),
                                         Forms\Components\Select::make('estado')
                                             ->label('Estado')
                                             ->options(EstadoExpediente::class)
                                             ->default(EstadoExpediente::Pendiente)
                                             ->required(),
+                                        Forms\Components\Select::make('tipo_caso_familia')
+                                            ->label('Tipo de caso (familia)')
+                                            ->options(TipoCasoFamilia::class)
+                                            ->visible(fn (Get $get): bool => $get('materia') === Materia::Familia->value
+                                                || $get('materia') === Materia::Familia)
+                                            ->required(fn (Get $get): bool => $get('materia') === Materia::Familia->value
+                                                || $get('materia') === Materia::Familia),
+                                        Forms\Components\Select::make('etapa_penal')
+                                            ->label('Etapa procesal (penal)')
+                                            ->options(EtapaPenal::class)
+                                            ->visible(fn (Get $get): bool => $get('materia') === Materia::Penal->value
+                                                || $get('materia') === Materia::Penal)
+                                            ->required(fn (Get $get): bool => $get('materia') === Materia::Penal->value
+                                                || $get('materia') === Materia::Penal),
+                                        Forms\Components\Toggle::make('datos_sensibles')
+                                            ->label('Datos sensibles (menores / violencia)')
+                                            ->helperText('Marcá si el expediente requiere cuidado extra de acceso y manejo.')
+                                            ->visible(fn (Get $get): bool => in_array($get('materia'), [
+                                                Materia::Familia->value,
+                                                Materia::Familia,
+                                                Materia::Penal->value,
+                                                Materia::Penal,
+                                            ], true))
+                                            ->columnSpanFull(),
                                         Forms\Components\TextInput::make('juzgado')
                                             ->label('Juzgado')
                                             ->maxLength(255),
@@ -164,6 +192,20 @@ class ExpedienteResource extends Resource
                 Tables\Columns\TextColumn::make('materia')
                     ->label('Materia')
                     ->badge(),
+                Tables\Columns\TextColumn::make('tipo_caso_familia')
+                    ->label('Tipo familia')
+                    ->badge()
+                    ->toggleable()
+                    ->placeholder('—'),
+                Tables\Columns\TextColumn::make('etapa_penal')
+                    ->label('Etapa penal')
+                    ->badge()
+                    ->toggleable()
+                    ->placeholder('—'),
+                Tables\Columns\IconColumn::make('datos_sensibles')
+                    ->label('Sensible')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
                     ->badge(),
@@ -218,6 +260,20 @@ class ExpedienteResource extends Resource
                         Infolists\Components\TextEntry::make('cliente.nombre')->label('Cliente'),
                         Infolists\Components\TextEntry::make('responsable.name')->label('Responsable'),
                         Infolists\Components\TextEntry::make('materia')->label('Materia')->badge(),
+                        Infolists\Components\TextEntry::make('tipo_caso_familia')
+                            ->label('Tipo de caso (familia)')
+                            ->badge()
+                            ->placeholder('—')
+                            ->visible(fn (Expediente $record): bool => $record->esFamilia()),
+                        Infolists\Components\TextEntry::make('etapa_penal')
+                            ->label('Etapa procesal')
+                            ->badge()
+                            ->placeholder('—')
+                            ->visible(fn (Expediente $record): bool => $record->esPenal()),
+                        Infolists\Components\IconEntry::make('datos_sensibles')
+                            ->label('Datos sensibles')
+                            ->boolean()
+                            ->visible(fn (Expediente $record): bool => $record->esFamilia() || $record->esPenal()),
                         Infolists\Components\TextEntry::make('estado')->label('Estado')->badge(),
                         Infolists\Components\TextEntry::make('juzgado')->label('Juzgado')->placeholder('—'),
                         Infolists\Components\TextEntry::make('fecha_inicio')->label('Fecha de inicio')->date('d/m/Y'),
@@ -261,6 +317,11 @@ class ExpedienteResource extends Resource
     {
         return [
             RelationManagers\PartesRelationManager::class,
+            RelationManagers\BeneficiariosFamiliaresRelationManager::class,
+            RelationManagers\PensionesAlimentariasRelationManager::class,
+            RelationManagers\CuotasAlimentariasRelationManager::class,
+            RelationManagers\PagosAlimentariosRelationManager::class,
+            RelationManagers\MedidasCautelaresRelationManager::class,
             RelationManagers\DocumentosRelationManager::class,
             RelationManagers\ActuacionesRelationManager::class,
             RelationManagers\EventosRelationManager::class,
